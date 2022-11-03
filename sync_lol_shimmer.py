@@ -32,6 +32,7 @@ if __name__ == "__main__": # test parsers
 	print(args)
 	# ---------------------------------------------------------------
 	# Checking input files
+        os.makedirs(args.input_folder,exist_ok=True)
 	input_shimmer = os.path.join(args.input_folder,args.shimmer_file)
 	input_timeline = os.path.join(args.input_folder,args.timeline_file)
 	input_match = os.path.join(args.input_folder,args.match_file)

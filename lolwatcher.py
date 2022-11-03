@@ -128,6 +128,7 @@ if __name__ == "__main__": # test riotwatcher
 	api_key = args.api_key
 	output_folder = args.output_folder
 	match_id = args.match_id
+        os.makedirs(args.output_folder,exist_ok=True)
 
 	# get instances
 	lol_watcher = riotwatcher_get_instance(api_key)

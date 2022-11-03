@@ -3,6 +3,8 @@ from pynput import keyboard
 import time
 import json
 import sys
+import os
+os.makedirs("data",exist_ok=True)
 
 n = len(sys.argv)
 name_of_recording = input("Enter participant code: ")

@@ -15,6 +15,8 @@ import serial.tools.list_ports
 from datetime import datetime
 import csv
 
+os.makedirs("assets",exist_ok=True)
+
 participant_code = input("Enter participant code: ")
 
 print('Port searching.....')
