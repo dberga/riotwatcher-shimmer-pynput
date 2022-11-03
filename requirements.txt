@@ -1,0 +1,6 @@
+riotwatcher
+pyserial
+pandas
+pylsl
+matplotlib
+pynput==1.7.6
