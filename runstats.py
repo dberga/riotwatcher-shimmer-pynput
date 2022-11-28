@@ -171,6 +171,40 @@ if __name__ == "__main__": # test parsers
             all_players_df[i]['EVENTS'][df_res_target[df_res_target==True].index] = str(e+10)
             all_players_df[i]['EVENTS'][df_res_assist[df_res_assist==True].index] = str(e+100)
 
+    # create dataframes on txt for Eleonora
+    out_folder = 'output/'
+    os.makedirs(out_folder,exist_ok = True)
+
+    all_players_gsr_raw = []
+    all_players_ppg_raw = []
+    for i,playerdf in enumerate(all_players_df):
+        gsr_df = playerdf[['timestamp','GSR_raw', 'EVENTS']].copy()
+        ppg_df = playerdf[['timestamp','PPG_raw', 'EVENTS']].copy()
+
+        # set pre and post 10 sec
+        gsr_events = gsr_df['timestamp'][gsr_df['EVENTS'] != '']
+        ppg_events = ppg_df['timestamp'][ppg_df['EVENTS'] != '']
+        for ttp in list(gsr_events): 
+            gsr_df = gsr_df.append({'timestamp': ttp-10000,'GSR_raw': gsr_df[gsr_df['timestamp']==ttp]['GSR_raw'].iloc[0],'EVENTS': gsr_df[gsr_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(1000)},ignore_index=True) # pre
+            gsr_df = gsr_df.append({'timestamp': ttp+10000,'GSR_raw': gsr_df[gsr_df['timestamp']==ttp]['GSR_raw'].iloc[0],'EVENTS': gsr_df[gsr_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(2000)},ignore_index=True) # post
+            #gsr_df['EVENTS'].loc[index-1000] = gsr_df['EVENTS'][index]+str(1000) # pre
+            #gsr_df['EVENTS'].loc[index+1000] = gsr_df['EVENTS'][index]+str(2000) # post
+        for ttp in list(ppg_events):
+            ppg_df = ppg_df.append({'timestamp': ttp-10000,'PPG_raw': ppg_df[ppg_df['timestamp']==ttp]['PPG_raw'].iloc[0],'EVENTS': ppg_df[ppg_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(1000)},ignore_index=True) # pre
+            ppg_df = ppg_df.append({'timestamp': ttp+10000,'PPG_raw': ppg_df[ppg_df['timestamp']==ttp]['PPG_raw'].iloc[0],'EVENTS': ppg_df[ppg_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(2000)},ignore_index=True) # post
+            #ppg_df['EVENTS'].loc[index-1000] = gsr_df['EVENTS'][index]+str(1000) # pre
+            #ppg_df['EVENTS'].loc[index+1000] = gsr_df['EVENTS'][index]+str(2000) # post
+        gsr_df = gsr_df.set_index('timestamp').sort_index(ascending=True)
+        ppg_df = ppg_df.set_index('timestamp').sort_index(ascending=True)
+        all_players_gsr_raw.append(gsr_df)
+        all_players_ppg_raw.append(ppg_df)
+        filename_gsr = "gsr_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename_ppg = "ppg_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        gsr_df.to_csv(out_folder+filename_gsr,sep=" ",header=False)
+        ppg_df.to_csv(out_folder+filename_ppg,sep=" ",header=False)
+
+    exit()
+
     # remove unnecesary fields
     for i,playerdf in enumerate(all_players_df):
         del all_players_df[i]['event_type']
@@ -186,7 +220,6 @@ if __name__ == "__main__": # test parsers
         del all_players_df[i]['horizontal_direction']
         del all_players_df[i]['x']
         del all_players_df[i]['y']
-
     # concat all data to one unique file
     whole_df = pd.concat(all_players_df,axis=0).reset_index(drop=True)
 
@@ -195,93 +228,11 @@ if __name__ == "__main__": # test parsers
         del all_players_df[i]['name']
         del all_players_df[i]['gameid']
 
+
     ##### WRITE CSV
-    out_folder = 'output/'
-    os.makedirs(out_folder,exist_ok = True)
     for i,playerdf in enumerate(all_players_df):
         filename = all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+".csv"
         all_players_df[i].to_csv(out_folder+filename,sep=" ")
 
     whole_df.to_csv(out_folder+"whole.csv",sep=" ")
-    ##### STATS
-    '''
-    # one-way anova (differences)
-    print("-----GSR_ohm comparison between players in all sessions. ANOVA:")
-    fvalue, pvalue = stats.f_oneway(all_players_df[0]['GSR_ohm'], all_players_df[1]['GSR_ohm'], all_players_df[2]['GSR_ohm'], all_players_df[3]['GSR_ohm'], all_players_df[4]['GSR_ohm'],all_players_df[5]['GSR_ohm'], all_players_df[6]['GSR_ohm'], all_players_df[7]['GSR_ohm'], all_players_df[8]['GSR_ohm'], all_players_df[9]['GSR_ohm'],all_players_df[10]['GSR_ohm'], all_players_df[12]['GSR_ohm'], all_players_df[13]['GSR_ohm'], all_players_df[14]['GSR_ohm'])
-    print(f"GSR_ohm difference between participants: F={fvalue}, p={pvalue}")
-    
-    print("-----PPG_mv comparison between players in all sessions. ANOVA:")
-    fvalue, pvalue = stats.f_oneway(all_players_df[0]['PPG_mv'], all_players_df[1]['PPG_mv'], all_players_df[2]['PPG_mv'], all_players_df[3]['PPG_mv'], all_players_df[4]['PPG_mv'],all_players_df[5]['PPG_mv'], all_players_df[6]['PPG_mv'], all_players_df[7]['PPG_mv'], all_players_df[8]['PPG_mv'], all_players_df[9]['PPG_mv'],all_players_df[10]['PPG_mv'], all_players_df[12]['PPG_mv'], all_players_df[13]['PPG_mv'], all_players_df[14]['PPG_mv'])
-    print(f"PPG_mv difference between participants: F={fvalue}, p={pvalue}")
-    
-    print("-----GSR_ohm comparison between players in same session. ANOVA:")
-    fvalue, pvalue = stats.f_oneway(all_players_df[0]['GSR_ohm'], all_players_df[1]['GSR_ohm'], all_players_df[2]['GSR_ohm'], all_players_df[3]['GSR_ohm'], all_players_df[4]['GSR_ohm'])
-    print(f"*1st session* GSR_ohm difference between participants: F={fvalue}, p={pvalue}")
-    fvalue, pvalue = stats.f_oneway(all_players_df[5]['GSR_ohm'], all_players_df[6]['GSR_ohm'], all_players_df[7]['GSR_ohm'], all_players_df[8]['GSR_ohm'], all_players_df[9]['GSR_ohm'])
-    print(f"*2nd session* GSR_ohm difference between participants: F={fvalue}, p={pvalue}")
-    fvalue, pvalue = stats.f_oneway(all_players_df[10]['GSR_ohm'], all_players_df[12]['GSR_ohm'], all_players_df[13]['GSR_ohm'], all_players_df[14]['GSR_ohm']) # all_players_df[11] sensor was not working
-    print(f"*3rd session* GSR_ohm difference between participants: F={fvalue}, p={pvalue}")
-    print("*4th session* No GSR_ohm data") # all_players_df[15]  sensor was not working
-    
-    print("-----PPG_mv comparison between players in same session. ANOVA:")
-    fvalue, pvalue = stats.f_oneway(all_players_df[0]['PPG_mv'], all_players_df[1]['PPG_mv'], all_players_df[2]['PPG_mv'], all_players_df[3]['PPG_mv'], all_players_df[4]['PPG_mv'])
-    print(f"*1st session* PPG_mv difference between participants: F={fvalue}, p={pvalue}")
-    fvalue, pvalue = stats.f_oneway(all_players_df[5]['PPG_mv'], all_players_df[6]['PPG_mv'], all_players_df[7]['PPG_mv'], all_players_df[8]['PPG_mv'], all_players_df[9]['PPG_mv'])
-    print(f"*2nd session* PPG_mv difference between participants: F={fvalue}, p={pvalue}")
-    fvalue, pvalue = stats.f_oneway(all_players_df[10]['PPG_mv'], all_players_df[12]['PPG_mv'], all_players_df[13]['PPG_mv'], all_players_df[14]['PPG_mv']) # all_players_df[11] sensor was not working
-    print(f"*3rd session* PPG_mv difference between participants: F={fvalue}, p={pvalue}")
-    print("*4th session* No PPG_mv data") # all_players_df[15] sensor was not working
-    
-    # correlations / anticorrelations
-    print("-----GSR_ohm and PPG_mv correlation for all players (all players data concatenated in 1 column)")
-    all_gsr_ohm = pd.concat([all_players_df[0]['GSR_ohm'], all_players_df[1]['PPG_mv'], all_players_df[2]['GSR_ohm'], all_players_df[3]['GSR_ohm'], all_players_df[4]['GSR_ohm'],all_players_df[5]['GSR_ohm'], all_players_df[6]['GSR_ohm'], all_players_df[7]['GSR_ohm'], all_players_df[8]['GSR_ohm'], all_players_df[9]['GSR_ohm'],all_players_df[10]['GSR_ohm'], all_players_df[12]['GSR_ohm'], all_players_df[13]['GSR_ohm'], all_players_df[14]['GSR_ohm']], axis=0)
-    all_ppg_mv = pd.concat([all_players_df[0]['PPG_mv'], all_players_df[1]['PPG_mv'], all_players_df[2]['PPG_mv'], all_players_df[3]['PPG_mv'], all_players_df[4]['PPG_mv'],all_players_df[5]['PPG_mv'], all_players_df[6]['PPG_mv'], all_players_df[7]['PPG_mv'], all_players_df[8]['PPG_mv'], all_players_df[9]['PPG_mv'],all_players_df[10]['PPG_mv'], all_players_df[12]['PPG_mv'], all_players_df[13]['PPG_mv'], all_players_df[14]['PPG_mv']], axis=0)
-    rho,pvalue = stats.pearsonr(all_ppg_mv,all_gsr_ohm)
-    print(f"correlation between GSR_ohm and PPG_mv for all players: rho={rho}, p={pvalue}")
-    
-    print("-----GSR_ohm and PPG_mv correlation for each individual player. PEARSON:")
-    rho,pvalue = stats.pearsonr(all_players_df[0]['PPG_mv'],all_players_df[0]['GSR_ohm'])
-    print(f"*1st session* {all_players_info[0]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[1]['PPG_mv'],all_players_df[1]['GSR_ohm'])
-    print(f"*1st session* {all_players_info[1]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[2]['PPG_mv'],all_players_df[2]['GSR_ohm'])
-    print(f"*1st session* {all_players_info[2]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[3]['PPG_mv'],all_players_df[3]['GSR_ohm'])
-    print(f"*1st session* {all_players_info[3]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[4]['PPG_mv'],all_players_df[4]['GSR_ohm'])
-    print(f"*1st session* {all_players_info[4]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    
-    rho,pvalue = stats.pearsonr(all_players_df[5]['PPG_mv'],all_players_df[5]['GSR_ohm'])
-    print(f"*2nd session* {all_players_info[5]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[6]['PPG_mv'],all_players_df[6]['GSR_ohm'])
-    print(f"*2nd session* {all_players_info[6]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[7]['PPG_mv'],all_players_df[7]['GSR_ohm'])
-    print(f"*2nd session* {all_players_info[7]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[8]['PPG_mv'],all_players_df[8]['GSR_ohm'])
-    print(f"*2nd session* {all_players_info[8]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[9]['PPG_mv'],all_players_df[9]['GSR_ohm'])
-    print(f"*2nd session* {all_players_info[9]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    
-    rho,pvalue = stats.pearsonr(all_players_df[10]['PPG_mv'],all_players_df[10]['GSR_ohm'])
-    print(f"*3rd session* {all_players_info[10]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[12]['PPG_mv'],all_players_df[12]['GSR_ohm'])
-    print(f"*3rd session* {all_players_info[12]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[13]['PPG_mv'],all_players_df[13]['GSR_ohm'])
-    print(f"*3rd session* {all_players_info[13]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    rho,pvalue = stats.pearsonr(all_players_df[14]['PPG_mv'],all_players_df[14]['GSR_ohm'])
-    print(f"*3rd session* {all_players_info[14]['champion']} correlation between GSR_ohm and PPG_mv: rho={rho}, p={pvalue}")
-    
-    print(f"*4th session* {all_players_info[15]['champion']} has no GSR_ohm nor PPG_mv data")
-    '''
-    # to do: split GSR_ohm measurement in 2 or 3 parts (30 or 20 min) and make differences between
-    # to do: split GSR_ohm measurement in 2 or 3 parts and make differences between
-    # to do: filter GSR_ohm and PPG_mv event time (30 sec before and 30 after an event in which all_players_info[X]['id'] appears as event_origin or event_target) for each specific player
-    # to do: set click (Button.left or Button.right) as '0' and Q,W,A,S,D,1,2,3,4,5,6,7,8,9,0 as '1' in key dataframes
-        # then calculate absolute differences and correlations between keys and clicks
-        # then calculate absolute differences and correlations between keys and GSR_ohm
-        # then calculate absolute differences and correlations between keys and PPG_mv
-        # then calculate absolute differences and correlations between clicks and GSR_ohm
-        # then calculate absolute differences and correlations between clicks and PPG_mv
-    #to do: filter keys and clicks event time (30 sec before and 30 after an event in which all_players_info[X]['id'] appears as event_origin or event_target) for each specific player
-    #to do: filter data from roles in all_players_info[X]['role'] and then make statistics
     
