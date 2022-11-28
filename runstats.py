@@ -142,17 +142,32 @@ if __name__ == "__main__": # test parsers
 
     # replace event data by numbers
     available_events = [
-        "CHAMPION_KILL", #0 = killing, 10 = being killed (death), 100 = assisting
-        "CHAMPION_SPECIAL_KILL", #1 = special killing
-        "ITEM_PURCHASED", #2
-        "LEVEL_UP", #3
-        "SKILL_LEVEL_UP", #4
-        "WARD_PLACED", #5
-        "BUILDING_KILL", #6
-        "CHAMPION_TRANSFORM", #7
-        "TURRET_PLATE_DESTROYED", #8
-        "ELITE_MONSTER_KILL", # 9
+        "CHAMPION_KILL", #1 = killing, 11 = being killed (death), 100 = assisting
+        "CHAMPION_SPECIAL_KILL", #2 = special killing
+        "ITEM_PURCHASED", #3
+        "LEVEL_UP", #4
+        "SKILL_LEVEL_UP", #5
+        "WARD_PLACED", #6
+        "BUILDING_KILL", #7
+        "CHAMPION_TRANSFORM", #8
+        "TURRET_PLATE_DESTROYED", #9
+        "ELITE_MONSTER_KILL", # 10
         ]
+    dict_event_window_size = {
+    '1': 10000, 
+    '2': 30000,
+    '3': 100,
+    '4': 1000,
+    '5': 1000,
+    '6': 5000,
+    '7': 30000,
+    '8': 3000,
+    '9': 1000,
+    '10': 60000,
+    '11': 10000,
+    '100': 5000,
+    }
+    pre_post_keys = [1000, 2000]
 
     for i,playerdf in enumerate(all_players_df):
         all_players_df[i]['EVENTS'] = ''
@@ -167,9 +182,9 @@ if __name__ == "__main__": # test parsers
             df_res_assist = df_filter_event_assist(all_players_df[i],event_type,player_idx)
             #print(f"{event_type}: origin:{df_res_origin.sum()},target:{df_res_target.sum()},assist:{df_res_assist.sum()}")
 
-            all_players_df[i]['EVENTS'][df_res_origin[df_res_origin==True].index] = str(e)
-            all_players_df[i]['EVENTS'][df_res_target[df_res_target==True].index] = str(e+10)
-            all_players_df[i]['EVENTS'][df_res_assist[df_res_assist==True].index] = str(e+100)
+            all_players_df[i]['EVENTS'][df_res_origin[df_res_origin==True].index] = str(e+1)
+            all_players_df[i]['EVENTS'][df_res_target[df_res_target==True].index] = str(e+1+10)
+            all_players_df[i]['EVENTS'][df_res_assist[df_res_assist==True].index] = str(e+1+99)
 
     # create dataframes on txt for Eleonora
     out_folder = 'output/'
@@ -182,16 +197,24 @@ if __name__ == "__main__": # test parsers
         ppg_df = playerdf[['timestamp','PPG_raw', 'EVENTS']].copy()
 
         # set pre and post 10 sec
-        gsr_events = gsr_df['timestamp'][gsr_df['EVENTS'] != '']
-        ppg_events = ppg_df['timestamp'][ppg_df['EVENTS'] != '']
-        for ttp in list(gsr_events): 
-            gsr_df = gsr_df.append({'timestamp': ttp-10000,'GSR_raw': gsr_df[gsr_df['timestamp']==ttp]['GSR_raw'].iloc[0],'EVENTS': gsr_df[gsr_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(1000)},ignore_index=True) # pre
-            gsr_df = gsr_df.append({'timestamp': ttp+10000,'GSR_raw': gsr_df[gsr_df['timestamp']==ttp]['GSR_raw'].iloc[0],'EVENTS': gsr_df[gsr_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(2000)},ignore_index=True) # post
+        gsr_events = gsr_df[gsr_df['EVENTS'] != '']
+        ppg_events = ppg_df[ppg_df['EVENTS'] != '']
+        for index, row in gsr_events.iterrows():
+            ttp = row['timestamp']
+            event = row['EVENTS']
+            gsr = row['GSR_raw']
+            pre_post_time = dict_event_window_size[event]
+            gsr_df = gsr_df.append({'timestamp': ttp-pre_post_time,'GSR_raw': gsr,'EVENTS': event+str(pre_post_keys[0])},ignore_index=True) # pre
+            gsr_df = gsr_df.append({'timestamp': ttp+pre_post_time,'GSR_raw': gsr,'EVENTS': event+str(pre_post_keys[1])},ignore_index=True) # post
             #gsr_df['EVENTS'].loc[index-1000] = gsr_df['EVENTS'][index]+str(1000) # pre
             #gsr_df['EVENTS'].loc[index+1000] = gsr_df['EVENTS'][index]+str(2000) # post
-        for ttp in list(ppg_events):
-            ppg_df = ppg_df.append({'timestamp': ttp-10000,'PPG_raw': ppg_df[ppg_df['timestamp']==ttp]['PPG_raw'].iloc[0],'EVENTS': ppg_df[ppg_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(1000)},ignore_index=True) # pre
-            ppg_df = ppg_df.append({'timestamp': ttp+10000,'PPG_raw': ppg_df[ppg_df['timestamp']==ttp]['PPG_raw'].iloc[0],'EVENTS': ppg_df[ppg_df['timestamp']==ttp]['EVENTS'].iloc[0]+str(2000)},ignore_index=True) # post
+        for index, row in ppg_events.iterrows():
+            ttp = row['timestamp']
+            event = row['EVENTS']
+            ppg = row['PPG_raw']
+            pre_post_time = dict_event_window_size[event]
+            ppg_df = ppg_df.append({'timestamp': ttp-pre_post_time,'PPG_raw': ppg,'EVENTS': event+str(pre_post_keys[0])},ignore_index=True) # pre
+            ppg_df = ppg_df.append({'timestamp': ttp+pre_post_time,'PPG_raw': ppg,'EVENTS': event+str(pre_post_keys[1])},ignore_index=True) # post
             #ppg_df['EVENTS'].loc[index-1000] = gsr_df['EVENTS'][index]+str(1000) # pre
             #ppg_df['EVENTS'].loc[index+1000] = gsr_df['EVENTS'][index]+str(2000) # post
         gsr_df = gsr_df.set_index('timestamp').sort_index(ascending=True)
