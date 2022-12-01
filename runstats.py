@@ -293,19 +293,19 @@ if __name__ == "__main__": # test parsers
 
         # write files
         gsr_5s = gsr_5s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"gsr_events:5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename = f"gsr_events5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         gsr_5s.to_csv(out_folder+filename,sep=" ",header=False)
         
         ppg_5s = ppg_5s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"ppg_events:5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename = f"ppg_events5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         ppg_5s.to_csv(out_folder+filename,sep=" ",header=False)
 
         gsr_10s = gsr_10s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"gsr_events:10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename = f"gsr_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         gsr_10s.to_csv(out_folder+filename,sep=" ",header=False)
 
         ppg_10s = ppg_10s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"ppg_events:10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename = f"ppg_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         ppg_10s.to_csv(out_folder+filename,sep=" ",header=False)
 
     exit()
