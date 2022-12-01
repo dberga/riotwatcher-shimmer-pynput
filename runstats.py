@@ -154,20 +154,22 @@ if __name__ == "__main__": # test parsers
         "ELITE_MONSTER_KILL", # 10
         ]
     dict_event_window_size = {
-    '1': 10000, 
-    '2': 30000,
-    '3': 100,
-    '4': 1000,
-    '5': 1000,
+    '1': 5000, 
+    '2': 10000,
+    '3': 0,
+    '4': 0,
+    '5': 0,
     '6': 5000,
-    '7': 30000,
-    '8': 3000,
-    '9': 1000,
-    '10': 60000,
+    '7': 10000,
+    '8': 5000,
+    '9': 5000,
+    '10': 10000,
     '11': 10000,
-    '100': 5000,
+    '100': 0,
     }
     pre_post_keys = [1000, 2000]
+    list_events_5s = [key for key in list(dict_event_window_size.keys()) if dict_event_window_size[key]==5000]
+    list_events_10s = [key for key in list(dict_event_window_size.keys()) if dict_event_window_size[key]==10000]
 
     for i,playerdf in enumerate(all_players_df):
         all_players_df[i]['EVENTS'] = ''
@@ -195,17 +197,17 @@ if __name__ == "__main__": # test parsers
     for i,playerdf in enumerate(all_players_df):
         gsr_df = playerdf[['timestamp','GSR_raw', 'EVENTS']].copy()
         ppg_df = playerdf[['timestamp','PPG_raw', 'EVENTS']].copy()
-
-        # set pre and post 10 sec
         gsr_events = gsr_df[gsr_df['EVENTS'] != '']
         ppg_events = ppg_df[ppg_df['EVENTS'] != '']
+        ### old (include all events)
+        '''
         for index, row in gsr_events.iterrows():
             ttp = row['timestamp']
             event = row['EVENTS']
             gsr = row['GSR_raw']
             pre_post_time = dict_event_window_size[event]
             gsr_df = gsr_df.append({'timestamp': ttp-pre_post_time,'GSR_raw': gsr,'EVENTS': event+str(pre_post_keys[0])},ignore_index=True) # pre
-            gsr_df = gsr_df.append({'timestamp': ttp+pre_post_time,'GSR_raw': gsr,'EVENTS': event+str(pre_post_keys[1])},ignore_index=True) # post
+            #gsr_df = gsr_df.append({'timestamp': ttp+pre_post_time,'GSR_raw': gsr,'EVENTS': event+str(pre_post_keys[1])},ignore_index=True) # post
             #gsr_df['EVENTS'].loc[index-1000] = gsr_df['EVENTS'][index]+str(1000) # pre
             #gsr_df['EVENTS'].loc[index+1000] = gsr_df['EVENTS'][index]+str(2000) # post
         for index, row in ppg_events.iterrows():
@@ -214,7 +216,7 @@ if __name__ == "__main__": # test parsers
             ppg = row['PPG_raw']
             pre_post_time = dict_event_window_size[event]
             ppg_df = ppg_df.append({'timestamp': ttp-pre_post_time,'PPG_raw': ppg,'EVENTS': event+str(pre_post_keys[0])},ignore_index=True) # pre
-            ppg_df = ppg_df.append({'timestamp': ttp+pre_post_time,'PPG_raw': ppg,'EVENTS': event+str(pre_post_keys[1])},ignore_index=True) # post
+            #ppg_df = ppg_df.append({'timestamp': ttp+pre_post_time,'PPG_raw': ppg,'EVENTS': event+str(pre_post_keys[1])},ignore_index=True) # post
             #ppg_df['EVENTS'].loc[index-1000] = gsr_df['EVENTS'][index]+str(1000) # pre
             #ppg_df['EVENTS'].loc[index+1000] = gsr_df['EVENTS'][index]+str(2000) # post
         gsr_df = gsr_df.set_index('timestamp').sort_index(ascending=True)
@@ -225,6 +227,86 @@ if __name__ == "__main__": # test parsers
         filename_ppg = "ppg_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         gsr_df.to_csv(out_folder+filename_gsr,sep=" ",header=False)
         ppg_df.to_csv(out_folder+filename_ppg,sep=" ",header=False)
+        '''
+
+        # filter 5s and 10s events
+        gsr_events_5s = pd.DataFrame()
+        ppg_events_5s = pd.DataFrame()
+        gsr_events_10s = pd.DataFrame()
+        ppg_events_10s = pd.DataFrame()
+        for eventkey in list_events_5s:
+            current_gsr_events_5s = gsr_df[gsr_df['EVENTS'] == eventkey]
+            current_ppg_events_5s = ppg_df[ppg_df['EVENTS'] == eventkey]
+            gsr_events_5s = pd.concat([gsr_events_5s,current_gsr_events_5s])
+            ppg_events_5s = pd.concat([ppg_events_5s,current_ppg_events_5s])
+        for eventkey in list_events_10s:
+            current_gsr_events_10s = gsr_df[gsr_df['EVENTS'] == eventkey]
+            current_ppg_events_10s = ppg_df[ppg_df['EVENTS'] == eventkey]
+            gsr_events_10s = pd.concat([gsr_events_10s,current_gsr_events_10s])
+            ppg_events_10s = pd.concat([ppg_events_10s,current_ppg_events_10s])
+
+        # clean dataframes events to start adding clean events
+        gsr_5s = gsr_df
+        gsr_5s['EVENTS'] = ''
+        ppg_5s = ppg_df
+        ppg_5s['EVENTS'] = ''
+        gsr_10s = gsr_df
+        gsr_10s['EVENTS'] = ''
+        ppg_10s = ppg_df
+        ppg_10s['EVENTS'] = ''
+
+        # 5 sec events
+        for index, row in gsr_events_5s.iterrows():
+            gsr_5s = gsr_5s.append({'timestamp': row['timestamp'],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
+            gsr_5s = gsr_5s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
+        
+        for index, row in ppg_events_5s.iterrows():
+            ppg_5s = ppg_5s.append({'timestamp': row['timestamp'],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
+            ppg_5s = ppg_5s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
+        
+        # 10 sec events
+        for index, row in gsr_events_10s.iterrows():
+            gsr_10s = gsr_10s.append({'timestamp': row['timestamp'],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
+            gsr_10s = gsr_10s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
+        
+        for index, row in ppg_events_10s.iterrows():
+            ppg_10s = ppg_10s.append({'timestamp': row['timestamp'],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
+            ppg_10s = ppg_10s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
+        
+        # clean consecutive events (say the X1000 [pre] appears several times before the actual event X because other X events happen)
+        filt_5s = gsr_5s[gsr_5s['EVENTS'] != '']['EVENTS']
+        iffilt_5s = filt_5s.loc[filt_5s.shift() != filt_5s].index
+        gsr_5s.iloc[iffilt_5s]['EVENTS'] = filt_5s
+
+        filt_5s = ppg_5s[ppg_5s['EVENTS'] != '']['EVENTS']
+        iffilt_5s = filt_5s.loc[filt_5s.shift() != filt_5s].index
+        ppg_5s.iloc[iffilt_5s]['EVENTS'] = filt_5s
+        
+        filt_10s = gsr_10s[gsr_10s['EVENTS'] != '']['EVENTS']
+        iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
+        gsr_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
+        
+        filt_10s = ppg_10s[ppg_10s['EVENTS'] != '']['EVENTS']
+        iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
+        ppg_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
+        
+
+        # write files
+        gsr_5s = gsr_5s.set_index('timestamp').sort_index(ascending=True)
+        filename = f"gsr_events:5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        gsr_5s.to_csv(out_folder+filename,sep=" ",header=False)
+        
+        ppg_5s = ppg_5s.set_index('timestamp').sort_index(ascending=True)
+        filename = f"ppg_events:5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        ppg_5s.to_csv(out_folder+filename,sep=" ",header=False)
+
+        gsr_10s = gsr_10s.set_index('timestamp').sort_index(ascending=True)
+        filename = f"gsr_events:10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        gsr_10s.to_csv(out_folder+filename,sep=" ",header=False)
+
+        ppg_10s = ppg_10s.set_index('timestamp').sort_index(ascending=True)
+        filename = f"ppg_events:10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        ppg_10s.to_csv(out_folder+filename,sep=" ",header=False)
 
     exit()
 
