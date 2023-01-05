@@ -52,10 +52,10 @@ if __name__ == "__main__": # test parsers
     gamestats_file_session3 = root_dir+session_dirs[2]+"eventos/stats_2022-10-28_EUW1_6127260054.csv" # more data here
     playerinfo_session3 = [ # manually parsed from eventos/2022...
         {"name": "4K Poppy","id": 5,"role": "TOP","champion": "Kled","summonerLevel": 110,"teamId": 200,"win": True,"gameid": 6127260054},
-        {"name": "PELO AVIONETA","id": 6,"role": "JUNGLE","champion": "Poppy","summonerLevel": 298,"teamId": 200,"win": True,"gameid": 6127260054}, 
         {"name": "Darayitomck","id": 7,"role": "MIDDLE","champion": "Veigar","summonerLevel": 153,"teamId": 200,"win": True,"gameid": 6127260054},
         {"name": "Frank DeWitt","id": 8,"role": "BOTTOM","champion": "Caitlyn","summonerLevel": 354,"teamId": 200,"win": True,"gameid": 6127260054},
         {"name": "ivegotflow","id": 9,"role": "UTILITY","champion": "Morgana","summonerLevel": 116, "teamId": 200,"win": True,"gameid": 6127260054},
+        {"name": "PELO AVIONETA","id": 6,"role": "JUNGLE","champion": "Poppy","summonerLevel": 298,"teamId": 200,"win": True,"gameid": 6127260054}, 
     ]
     #### SESSION 4 - DATA FILES
     sync_files_session4 = [ # only pynput + lol
@@ -290,7 +290,6 @@ if __name__ == "__main__": # test parsers
         iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
         ppg_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
         
-
         # write files
         gsr_5s = gsr_5s.set_index('timestamp').sort_index(ascending=True)
         filename = f"gsr_events5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
@@ -307,8 +306,6 @@ if __name__ == "__main__": # test parsers
         ppg_10s = ppg_10s.set_index('timestamp').sort_index(ascending=True)
         filename = f"ppg_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         ppg_10s.to_csv(out_folder+filename,sep=" ",header=False)
-
-    exit()
 
     # remove unnecesary fields
     for i,playerdf in enumerate(all_players_df):
