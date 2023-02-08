@@ -33,7 +33,6 @@ for i,f in enumerate(pre_files):
 
 	# add empty column
 	df_res[2] = ""
-
 	# add events to df_res
 	df_events = df_pre[df_pre[2]>0]
 	for index, row in df_events.iterrows():
@@ -41,7 +40,7 @@ for i,f in enumerate(pre_files):
 		event = int(row[2]) 
 		res_idx = df_res[0].sub(timestamp).abs().idxmin()
 		df_res[2][res_idx] = event
-
+	df_res = df_res.set_index(0)
 	df_res.to_csv(out_folder+res_files[i].split("/")[1],sep=" ",header=False)
 
 
