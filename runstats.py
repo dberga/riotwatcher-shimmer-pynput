@@ -76,6 +76,10 @@ if __name__ == "__main__": # test parsers
         playerdf = pd.DataFrame.from_dict(playerdata)
         playerinfo = playerinfo_session1[i]
 
+        # convert to float64
+        playerdf['date'] = playerdf['date'].values.astype('datetime64[ns]')
+        playerdf['timestamp'] = playerdf['date'].values.astype('float64') / 10 ** 6
+
         all_players_df.append(playerdf)
         all_players_info.append(playerinfo)
         
@@ -92,10 +96,13 @@ if __name__ == "__main__": # test parsers
         
         playerdf = pd.DataFrame.from_dict(playerdata)
         
-        #transform date
+        #convert to float64
         playerdf['date'] = pd.to_datetime(playerdf['timestamp'], unit='s')
-        playerdf['timestamp'] = playerdf['date'].values.astype('int64') // 10 ** 6
-        
+        playerdf['timestamp'] = playerdf['date'].values.astype('float64') / 10 ** 6
+        # force float64 to GSR and PPG raw
+        playerdf['GSR_raw'] = playerdf['GSR_raw'].values.astype("float64")
+        playerdf['PPG_raw'] = playerdf['PPG_raw'].values.astype("float64")
+
         all_players_df.append(playerdf)
         all_players_info.append(playerinfo)
         
@@ -103,6 +110,14 @@ if __name__ == "__main__": # test parsers
         playerdata,fields = read_csv(file,head_index=0)
         playerdf = pd.DataFrame.from_dict(playerdata)
         playerinfo = playerinfo_session3[i]
+
+        # convert to float64
+        playerdf['date'] = playerdf['date'].values.astype('datetime64[ns]')
+        playerdf['timestamp'] = playerdf['date'].values.astype('float64') / 10 ** 6
+        # force float64 to GSR and PPG raw
+        #playerdf['GSR_raw'] = playerdf['GSR_raw'].values.astype("float64")
+        #playerdf['PPG_raw'] = playerdf['PPG_raw'].values.astype("float64")
+
         all_players_df.append(playerdf)
         all_players_info.append(playerinfo)
         
@@ -110,6 +125,14 @@ if __name__ == "__main__": # test parsers
         playerdata,fields = read_csv(file,head_index=0)
         playerdf = pd.DataFrame.from_dict(playerdata)
         playerinfo = playerinfo_session4[i]
+
+        # convert to float64
+        playerdf['date'] = playerdf['date'].values.astype('datetime64[ns]')
+        playerdf['timestamp'] = playerdf['date'].values.astype('float64') / 10 ** 6
+        # force float64 to GSR and PPG raw
+        #playerdf['GSR_raw'] = playerdf['GSR_raw'].values.astype("float64")
+        #playerdf['PPG_raw'] = playerdf['PPG_raw'].values.astype("float64")
+
         all_players_df.append(playerdf)
         all_players_info.append(playerinfo)
 
@@ -155,21 +178,21 @@ if __name__ == "__main__": # test parsers
         ]
     dict_event_window_size = {
     '1': 5000, 
-    '2': 10000,
+    '2': 5000, #10000
     '3': 0,
     '4': 0,
     '5': 0,
     '6': 5000,
-    '7': 10000,
+    '7': 5000, # 10000
     '8': 5000,
     '9': 5000,
-    '10': 10000,
-    '11': 10000,
+    '10': 5000, # 10000
+    '11': 5000, # 10000
     '100': 0,
     }
     pre_post_keys = [1000, 2000]
     list_events_5s = [key for key in list(dict_event_window_size.keys()) if dict_event_window_size[key]==5000]
-    list_events_10s = [key for key in list(dict_event_window_size.keys()) if dict_event_window_size[key]==10000]
+    #list_events_10s = [key for key in list(dict_event_window_size.keys()) if dict_event_window_size[key]==10000]
 
     for i,playerdf in enumerate(all_players_df):
         all_players_df[i]['EVENTS'] = ''
@@ -195,6 +218,11 @@ if __name__ == "__main__": # test parsers
     all_players_gsr_raw = []
     all_players_ppg_raw = []
     for i,playerdf in enumerate(all_players_df):
+        # calc session time and sampling rate
+        session_time_sec = (playerdf['timestamp'].iloc[-1]-playerdf['timestamp'].iloc[0]) / 1000
+        sampling_rate = float(playerdf.index.size) / session_time_sec
+
+        # separate gsr and ppg as individual dataframes
         gsr_df = playerdf[['timestamp','GSR_raw', 'EVENTS']].copy()
         ppg_df = playerdf[['timestamp','PPG_raw', 'EVENTS']].copy()
         gsr_events = gsr_df[gsr_df['EVENTS'] != '']
@@ -232,28 +260,28 @@ if __name__ == "__main__": # test parsers
         # filter 5s and 10s events
         gsr_events_5s = pd.DataFrame()
         ppg_events_5s = pd.DataFrame()
-        gsr_events_10s = pd.DataFrame()
-        ppg_events_10s = pd.DataFrame()
+        #gsr_events_10s = pd.DataFrame()
+        #ppg_events_10s = pd.DataFrame()
         for eventkey in list_events_5s:
             current_gsr_events_5s = gsr_df[gsr_df['EVENTS'] == eventkey]
             current_ppg_events_5s = ppg_df[ppg_df['EVENTS'] == eventkey]
             gsr_events_5s = pd.concat([gsr_events_5s,current_gsr_events_5s])
             ppg_events_5s = pd.concat([ppg_events_5s,current_ppg_events_5s])
-        for eventkey in list_events_10s:
-            current_gsr_events_10s = gsr_df[gsr_df['EVENTS'] == eventkey]
-            current_ppg_events_10s = ppg_df[ppg_df['EVENTS'] == eventkey]
-            gsr_events_10s = pd.concat([gsr_events_10s,current_gsr_events_10s])
-            ppg_events_10s = pd.concat([ppg_events_10s,current_ppg_events_10s])
+        #for eventkey in list_events_10s:
+        #    current_gsr_events_10s = gsr_df[gsr_df['EVENTS'] == eventkey]
+        #    current_ppg_events_10s = ppg_df[ppg_df['EVENTS'] == eventkey]
+        #    gsr_events_10s = pd.concat([gsr_events_10s,current_gsr_events_10s])
+        #    ppg_events_10s = pd.concat([ppg_events_10s,current_ppg_events_10s])
 
         # clean dataframes events to start adding clean events
         gsr_5s = gsr_df
         gsr_5s['EVENTS'] = ''
         ppg_5s = ppg_df
         ppg_5s['EVENTS'] = ''
-        gsr_10s = gsr_df
-        gsr_10s['EVENTS'] = ''
-        ppg_10s = ppg_df
-        ppg_10s['EVENTS'] = ''
+        #gsr_10s = gsr_df
+        #gsr_10s['EVENTS'] = ''
+        #ppg_10s = ppg_df
+        #ppg_10s['EVENTS'] = ''
 
         # 5 sec events
         for index, row in gsr_events_5s.iterrows():
@@ -264,14 +292,14 @@ if __name__ == "__main__": # test parsers
             ppg_5s = ppg_5s.append({'timestamp': row['timestamp'],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
             ppg_5s = ppg_5s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
         
-        # 10 sec events
-        for index, row in gsr_events_10s.iterrows():
-            gsr_10s = gsr_10s.append({'timestamp': row['timestamp'],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
-            gsr_10s = gsr_10s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
-        
-        for index, row in ppg_events_10s.iterrows():
-            ppg_10s = ppg_10s.append({'timestamp': row['timestamp'],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
-            ppg_10s = ppg_10s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
+        ## 10 sec events
+        #for index, row in gsr_events_10s.iterrows():
+        #    gsr_10s = gsr_10s.append({'timestamp': row['timestamp'],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
+        #    gsr_10s = gsr_10s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'GSR_raw': row['GSR_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
+        #
+        #for index, row in ppg_events_10s.iterrows():
+        #    ppg_10s = ppg_10s.append({'timestamp': row['timestamp'],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']},ignore_index=True) # pre
+        #    ppg_10s = ppg_10s.append({'timestamp': row['timestamp']-dict_event_window_size[row['EVENTS']],'PPG_raw': row['PPG_raw'],'EVENTS': row['EVENTS']+str(pre_post_keys[0])},ignore_index=True) # pre
         
         # clean consecutive events (say the X1000 [pre] appears several times before the actual event X because other X events happen)
         filt_5s = gsr_5s[gsr_5s['EVENTS'] != '']['EVENTS']
@@ -282,30 +310,30 @@ if __name__ == "__main__": # test parsers
         iffilt_5s = filt_5s.loc[filt_5s.shift() != filt_5s].index
         ppg_5s.iloc[iffilt_5s]['EVENTS'] = filt_5s
         
-        filt_10s = gsr_10s[gsr_10s['EVENTS'] != '']['EVENTS']
-        iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
-        gsr_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
+        #filt_10s = gsr_10s[gsr_10s['EVENTS'] != '']['EVENTS']
+        #iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
+        #gsr_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
         
-        filt_10s = ppg_10s[ppg_10s['EVENTS'] != '']['EVENTS']
-        iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
-        ppg_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
-        
+        #filt_10s = ppg_10s[ppg_10s['EVENTS'] != '']['EVENTS']
+        #iffilt_10s = filt_10s.loc[filt_10s.shift() != filt_10s].index
+        #ppg_10s.iloc[iffilt_10s]['EVENTS'] = filt_10s
+
         # write files
         gsr_5s = gsr_5s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"gsr_events5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename = f"gsr_events5sec_"+all_players_info[i]['name']+"_session"+str(all_players_info[i]['gameid'])+"_samplingrate(Hz)"+str(sampling_rate)+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         gsr_5s.to_csv(out_folder+filename,sep=" ",header=False)
         
         ppg_5s = ppg_5s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"ppg_events5sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        filename = f"ppg_events5sec_"+all_players_info[i]['name']+"_session"+str(all_players_info[i]['gameid'])+"_samplingrate(Hz)"+str(sampling_rate)+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
         ppg_5s.to_csv(out_folder+filename,sep=" ",header=False)
 
-        gsr_10s = gsr_10s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"gsr_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
-        gsr_10s.to_csv(out_folder+filename,sep=" ",header=False)
+        #gsr_10s = gsr_10s.set_index('timestamp').sort_index(ascending=True)
+        #filename = f"gsr_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        #gsr_10s.to_csv(out_folder+filename,sep=" ",header=False)
 
-        ppg_10s = ppg_10s.set_index('timestamp').sort_index(ascending=True)
-        filename = f"ppg_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
-        ppg_10s.to_csv(out_folder+filename,sep=" ",header=False)
+        #ppg_10s = ppg_10s.set_index('timestamp').sort_index(ascending=True)
+        #filename = f"ppg_events10sec_"+all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+'_'+str(all_players_info[i]['role'])+'_'+str(all_players_info[i]['summonerLevel'])+'_'+str(all_players_info[i]['win'])+".txt"
+        #ppg_10s.to_csv(out_folder+filename,sep=" ",header=False)
 
     # remove unnecesary fields
     for i,playerdf in enumerate(all_players_df):
@@ -333,7 +361,10 @@ if __name__ == "__main__": # test parsers
 
     ##### WRITE CSV
     for i,playerdf in enumerate(all_players_df):
-        filename = all_players_info[i]['name']+"_"+str(all_players_info[i]['gameid'])+".csv"
+        session_time_sec = (playerdf['timestamp'].iloc[-1]-playerdf['timestamp'].iloc[0]) / 1000
+        sampling_rate = float(playerdf.index.size) / session_time_sec
+        playerdf['PPG_raw'] = playerdf['PPG_raw'].values.astype("str")
+        filename = all_players_info[i]['name']+"_session"+str(all_players_info[i]['gameid'])+"_samplingrate(Hz)"+str(sampling_rate)+".csv"
         all_players_df[i].to_csv(out_folder+filename,sep=" ")
 
     whole_df.to_csv(out_folder+"whole.csv",sep=" ")
